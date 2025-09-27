@@ -10,7 +10,7 @@ LOG_PATH = os.environ.get("TEST_LOG_PATH", "data/log.csv")
 PLAN_PATH = os.environ.get("TEST_PLAN_PATH", "data/plan.json")
 
 # Conversation states
-BEDTIME, WAKEUP, ONSET, AWAKE = range(4)
+BEDTIME, WAKEUP, ONSET, AWAKE, EARLIEST_WAKE = range(5)
 
 # Sleep Plan
 INIT_WINDOW = 3

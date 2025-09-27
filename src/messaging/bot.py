@@ -6,9 +6,10 @@ from telegram.ext import (
     CommandHandler,
 )
 
-from src.common.config import BOT_TOKEN, BEDTIME, WAKEUP, ONSET, AWAKE
+from src.common.config import BOT_TOKEN, BEDTIME, WAKEUP, ONSET, AWAKE, EARLIEST_WAKE
 
 from src.messaging.handlers import (
+    ask_earliest_wake,
     log,
     get_bedtime,
     get_awaken_time,
@@ -30,6 +31,9 @@ def main():
             ],
             ONSET: [MessageHandler(filters.TEXT & (~filters.COMMAND), get_sleep_onset)],
             AWAKE: [MessageHandler(filters.TEXT & (~filters.COMMAND), get_awaken_time)],
+            EARLIEST_WAKE: [
+                MessageHandler(filters.TEXT & (~filters.COMMAND), ask_earliest_wake)
+            ],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )

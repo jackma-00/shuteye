@@ -1,69 +1,63 @@
 import pandas as pd
 from datetime import timedelta, datetime
 
-from src.common.config import LOG_PATH, PLAN_PATH, INIT_WINDOW, WINDOW_LENGTH
+from src.common.config import LOG_PATH, PLAN_PATH
+from src.common.models import SleepPlan
+from src.data_manager.plan_utils import load_plan, save_plan
+from src.data_manager.log_utils import read_log_csv
 
-from src.processing.storage_utils import read_log_csv, load_plan, save_plan
 
-
-def initialize_sleep_plan(df, earliest_wake="07:00:00"):
-    """
-    After 1-2 weeks of baseline logs, create first sleep plan.
-    earliest_wake: string HH:MM:SS (earliest typical wake time)
-    """
+def initialize_sleep_plan(df: pd.DataFrame, default_plan: SleepPlan) -> SleepPlan:
+    """Create the first sleep plan after baseline logs."""
     avg_tst = df["tst"].mean()
-    tib = max(avg_tst + 30, 330)  # minutes, min 5.5h (330m)
-    wake_time = pd.to_datetime(earliest_wake).time()
-    wake_dt = datetime.combine(datetime.today(), wake_time)
-    bed_dt = wake_dt - timedelta(minutes=tib)
-    bedtime = bed_dt.time()
-    return {
-        "bedtime": bedtime.strftime("%H:%M:%S"),
-        "wake_time": wake_time.strftime("%H:%M:%S"),
-        "tib": int(tib),
-    }
+    tib = int(max(avg_tst + 30, 330))  # minutes, min 5.5h (330m)
+
+    plan = SleepPlan(
+        tib=tib,
+        wake_time=default_plan.wake_time,
+    )
+
+    plan.update_bedtime
+
+    save_plan(plan, PLAN_PATH)
+    return plan
 
 
-def adjust_sleep_plan(df, current_plan):
+def adjust_sleep_plan(
+    df: pd.DataFrame, current_plan: SleepPlan
+) -> tuple[SleepPlan, float]:
     """
-    Adjust plan based on last week's average SE.
+    Adjust plan based on last 5 days' average SE.
     """
     avg_se = df["se"].mean()
-    new_plan = current_plan.copy()
+    tib = current_plan.tib
 
     if avg_se > 90:
-        new_plan["tib"] += 15
+        tib += 15
     elif 70 <= avg_se < 85:
-        new_plan["tib"] -= 15
+        tib -= 15
     elif avg_se < 70:
         avg_tst = df["tst"].mean()
-        new_plan["tib"] = int(max(avg_tst + 30, 330))  # minutes, min 5.5h (330m))
+        tib = int(max(avg_tst + 30, 330))  # minutes, min 5.5h (330m)
 
-    # recompute bedtime from wake time and TIB
-    wake_dt = datetime.combine(datetime.today(), new_plan["wake_time"])
-    bed_dt = wake_dt - timedelta(minutes=new_plan["tib"])
-    new_plan["bedtime"] = bed_dt.time()
-
+    new_plan = SleepPlan(
+        tib=tib,
+        wake_time=current_plan.wake_time,
+    )
+    
+    # recompute bedtime from wake time and updated TIB
+    new_plan.update_bedtime
+   
+    save_plan(new_plan, PLAN_PATH)
     return new_plan, avg_se
 
 
-if __name__ == "__main__":
-    df = read_log_csv(LOG_PATH)
+# Compute new plan
+# df = read_log_csv(LOG_PATH)
+# curr_plan = load_plan(PLAN_PATH)
 
-    if len(df) == INIT_WINDOW:
-        plan = initialize_sleep_plan(df.tail(WINDOW_LENGTH), earliest_wake="08:00:00")
-        print("Initial Sleep Plan:", plan)
-        save_plan(plan, PLAN_PATH)
-        print(f"Plan saved to {PLAN_PATH}")
-    elif len(df) > 5:
-        # load existing plan
-        plan = load_plan(PLAN_PATH)
-        print("Current Plan:", plan)
+# curr_plan = initialize_sleep_plan(df, curr_plan)
+# print(f"Initialized plan: {curr_plan.to_dict()}")
 
-        # adjust plan weekly
-        new_plan, avg_se = adjust_sleep_plan(df.tail(WINDOW_LENGTH), plan)
-        print("Adjusted Plan:", new_plan, "based on avg SE =", avg_se)
-
-        # save adjusted plan
-        save_plan(new_plan, PLAN_PATH)
-        print(f"Plan saved to {PLAN_PATH}")
+# new_plan, avg_se = adjust_sleep_plan(df, curr_plan)
+# print(f"New plan: {new_plan.to_dict()}, avg SE: {avg_se:.1f}%")

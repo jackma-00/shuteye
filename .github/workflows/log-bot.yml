@@ -2,8 +2,8 @@ name: Telegram Sleep Bot
 
 on:
   schedule:
-    - cron: "0 9 * * *"   # Every day at 09:00 UTC
-  workflow_dispatch:       # Manual trigger option
+    - cron: "0 6 * * *"   # Every day at 07:00 CET (06:00 UTC) -> will be 08:00 in summer
+  workflow_dispatch:      # Manual trigger option
 
 permissions:
   contents: write
