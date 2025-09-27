@@ -142,4 +142,5 @@ cython_debug/
 .vscode/
 
 # Local data
-data/
+data/log.csv
+data/plan.json
