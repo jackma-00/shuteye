@@ -5,12 +5,17 @@ on:
     - cron: "0 9 * * *"   # Every day at 09:00 UTC
   workflow_dispatch:       # Manual trigger option
 
+permissions:
+  contents: write
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -29,5 +34,14 @@ jobs:
         run: |
           echo "Starting Telegram bot at $(date -u)"
           # Run for max 3h (10800 seconds)
-          timeout 10800 ./src/scripts/run_all.sh
+          timeout 10800 src/scripts/run_all.sh
           echo "Bot stopped at $(date -u)"
+      
+      - name: Commit & push updated sleep log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add data/log.csv
+          git commit -m "Update sleep log ($(date -u '+%Y-%m-%d %H:%M:%S'))"
+          git push
