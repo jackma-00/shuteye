@@ -34,7 +34,7 @@ jobs:
         run: |
           echo "Starting Telegram bot at $(date -u)"
           # Run for max 3h (10800 seconds)
-          timeout 10800 src/scripts/run_all.sh
+          timeout 10800 src/scripts/run_bot.sh
           echo "Bot stopped at $(date -u)"
       
       - name: Commit & push updated sleep log
