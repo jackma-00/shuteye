@@ -80,7 +80,7 @@ async def get_awaken_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         await update.message.reply_text(response)
-        
+
         # Stop the bot after final response
         context.application.stop_running()
 

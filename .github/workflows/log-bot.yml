@@ -42,6 +42,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add -f data/log.csv
+          git add data/log.csv
           git commit -m "Update sleep log ($(date -u '+%Y-%m-%d %H:%M:%S'))"
           git push
