@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, date, time, timedelta
-from typing import Dict, Optional
+from typing import Optional
 
 
 @dataclass
@@ -33,7 +33,7 @@ class SleepPlan:
         if wt <= bt:  # handle crossing midnight
             bt -= timedelta(days=1)
         self.tib = int((wt - bt).total_seconds() // 60)
-    
+
     @property
     def update_bedtime(self) -> None:
         if self.tib is None or self.wake_time is None:
