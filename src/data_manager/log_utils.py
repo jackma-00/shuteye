@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from datetime import datetime, time
 
-from src.common.config import LOG_PATH, INIT_WINDOW, WINDOW_LENGTH
+from src.common.config import LOG_PATH, INIT_WINDOW, UPDATE_WINDOW
 from src.common.exceptions import EntrySaveError
 from src.common.models import LogEntry
 
@@ -33,7 +33,7 @@ def ready_for_new_plan() -> bool:
     if not os.path.exists(LOG_PATH):
         return False
     df = read_log_csv(LOG_PATH)
-    return len(df) > INIT_WINDOW and (len(df) - INIT_WINDOW) % WINDOW_LENGTH == 0
+    return len(df) > INIT_WINDOW and (len(df) - INIT_WINDOW) % UPDATE_WINDOW == 0
 
 
 def add_new_entry(t_bed: time, t_wake: time, onset: int, awake: int) -> str:

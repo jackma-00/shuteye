@@ -84,3 +84,8 @@ class LogEntry:
         self.se = (
             int((self.tst / self.tib) * 100) if self.tib > 0 else 0
         )  # sleep efficiency %
+
+
+plan = SleepPlan(tib=402, wake_time=datetime.strptime("06:45", "%H:%M").time())
+plan.update_bedtime
+print(plan.bedtime)

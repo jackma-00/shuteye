@@ -1,4 +1,3 @@
-import pandas as pd
 from telegram import Update
 from telegram.ext import (
     ContextTypes,
@@ -15,9 +14,11 @@ from src.common.config import (
     ONSET,
     AWAKE,
     INIT_WINDOW,
-    WINDOW_LENGTH,
+    UPDATE_WINDOW,
 )
 from src.common.exceptions import EntrySaveError, PlanUpdateError
+
+from src.messaging.messages import Messages
 
 from src.data_manager.log_utils import (
     add_new_entry,
@@ -27,13 +28,14 @@ from src.data_manager.log_utils import (
 )
 from src.data_manager.plan_utils import update_wake_time, load_plan
 
-from src.processing.compute_sleep_plan import adjust_sleep_plan, initialize_sleep_plan
+from src.processing.compute_sleep_plan import (
+    adjust_sleep_plan_se_tst_clipped,
+    initialize_sleep_plan,
+)
 
 
 async def log(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text(
-        "Good morning! 🌅 Hope you slept well. 🌸 What time did you head to bed? 🛏️ (HH:MM)"
-    )
+    await update.message.reply_text(Messages.good_morning)
     return BEDTIME
 
 
@@ -41,7 +43,7 @@ async def get_bedtime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     try:
         bedtime = datetime.strptime(update.message.text.strip(), "%H:%M").time()
         context.user_data["bedtime"] = bedtime
-        await update.message.reply_text("What time did you wake up? ⏰ (HH:MM)")
+        await update.message.reply_text(Messages.wake_up_time)
         return WAKEUP
     except Exception as e:
         await update.message.reply_text(
@@ -54,9 +56,7 @@ async def get_wakeup_time(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     try:
         wakeup = datetime.strptime(update.message.text.strip(), "%H:%M").time()
         context.user_data["wakeup"] = wakeup
-        await update.message.reply_text(
-            "How many minutes did it take you to fall asleep?"
-        )
+        await update.message.reply_text(Messages.ask_onset)
         return ONSET
     except Exception as e:
         await update.message.reply_text(
@@ -68,9 +68,7 @@ async def get_wakeup_time(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 async def get_sleep_onset(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
         context.user_data["onset"] = int(update.message.text)
-        await update.message.reply_text(
-            "How many minutes were you awake during the night?"
-        )
+        await update.message.reply_text(Messages.minutes_awake)
         return AWAKE
     except ValueError:
         await update.message.reply_text(
@@ -82,7 +80,7 @@ async def get_sleep_onset(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 async def get_awaken_time(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
         context.user_data["awake"] = int(update.message.text)
-        
+
         # Save entry to CSV
         response = add_new_entry(
             context.user_data["bedtime"],
@@ -95,22 +93,16 @@ async def get_awaken_time(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         # Check if enough data for plan generation
         if enough_data_for_first_plan():
-            await update.message.reply_text(
-                "🎉 You've logged enough data for your first sleep plan! Tell me your earliest desired wake-up time (HH:MM)"
-            )
+            await update.message.reply_text(Messages.first_sleep_plan_prompt)
 
             return EARLIEST_WAKE
 
         if ready_for_new_plan():
-            await update.message.reply_text(
-                "🔄 You've logged enough new data for an updated sleep plan! Confirm your wake-up time or update it (HH:MM)"
-            )
+            await update.message.reply_text(Messages.ready_for_next_plan)
 
             return EARLIEST_WAKE
 
-        await update.message.reply_text(
-            "That's all for today! 👋🏼 You can log again tomorrow with /log"
-        )
+        await update.message.reply_text(Messages.thats_it)
 
         # FIXME: Stop the bot after final response
         # context.application.stop_running()
@@ -137,7 +129,9 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         update_wake_time(earliest_wake)
 
         await update.message.reply_text(
-            f"Great! Your earliest desired wake-up time is set to {earliest_wake.strftime('%H:%M')}. Your sleep plan will be generated shortly. 🛌💤"
+            Messages.new_plan_being_generated.format(
+                wake_time=earliest_wake.strftime("%H:%M")
+            )
         )
 
         # Compute new plan
@@ -149,24 +143,32 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             hours, minutes = divmod(new_plan.tib, 60)
 
             await update.message.reply_text(
-                f"""🆕 Your first sleep plan has been generated! Here are the details:
-            - Target Time in Bed (TIB): {hours} hours {minutes} minutes
-            - Bedtime: {new_plan.bedtime.strftime('%H:%M')}
-            - Wake-up Time: {new_plan.wake_time.strftime('%H:%M')}
-            Sweet dreams! 😴✨"""
+                Messages.first_sleep_plan.format(
+                    hours=hours,
+                    minutes=minutes,
+                    bedtime=new_plan.bedtime.strftime("%H:%M"),
+                    wake_time=new_plan.wake_time.strftime("%H:%M"),
+                )
             )
         else:
-            new_plan, avg_se = adjust_sleep_plan(df.tail(WINDOW_LENGTH), curr_plan)
+            new_plan, avg_se, weighted_tst = adjust_sleep_plan_se_tst_clipped(
+                df.tail(UPDATE_WINDOW), curr_plan
+            )
 
             hours, minutes = divmod(new_plan.tib, 60)
+            hours_tst, minutes_tst = divmod(weighted_tst, 60)
 
             await update.message.reply_text(
-                f"""🆕 Your new sleep plan has been generated! Here are the details:
-            - Target Time in Bed (TIB): {hours} hours {minutes} minutes
-            - Bedtime: {new_plan.bedtime.strftime('%H:%M')}
-            - Wake-up Time: {new_plan.wake_time.strftime('%H:%M')}
-            - Last {WINDOW_LENGTH} days' Average Sleep Efficiency (SE): {avg_se:.2f}%
-            Sweet dreams! 😴✨"""
+                Messages.new_sleep_plan.format(
+                    hours=hours,
+                    minutes=minutes,
+                    bedtime=new_plan.bedtime.strftime("%H:%M"),
+                    wake_time=new_plan.wake_time.strftime("%H:%M"),
+                    UPDATE_WINDOW=UPDATE_WINDOW,
+                    hours_tst=int(hours_tst),
+                    minutes_tst=int(minutes_tst),
+                    avg_se=avg_se,
+                )
             )
 
         # FIXME: Stop the bot after final response
@@ -180,9 +182,7 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return EARLIEST_WAKE
     except PlanUpdateError as e:
         print(f"PlanUpdateError: {e}")
-        await update.message.reply_text(
-            "❌ Failed to update sleep plan due to an internal error. Sorry for the inconvenience, we'll fix it soon!"
-        )
+        await update.message.reply_text(Messages.internal_error)
         # FIXME: Stop the bot after final response
         # context.application.stop_running()
 
@@ -190,5 +190,5 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text("Bye! Hope to see you soon 😊")
+    await update.message.reply_text(Messages.bye)
     return ConversationHandler.END

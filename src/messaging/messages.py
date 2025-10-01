@@ -33,7 +33,7 @@ Wishing you sweet dreams and gentle mornings. 😴✨"""
 - Target Time in Bed (TIB): {hours} hours {minutes} minutes
 - Bedtime: {bedtime}
 - Wake-up Time: {wake_time}
-- Average Weighted Total Sleep Time (TST) over the last {window_length} days: {hours_tst} hours {minutes_tst} minutes
+- Average Weighted Total Sleep Time (TST) over the last {UPDATE_WINDOW} days: {hours_tst} hours {minutes_tst} minutes
 - Average Sleep Efficiency (SE): {avg_se:.2f}%
 
 Keep it up — you’re doing wonderfully! 🌟"""
