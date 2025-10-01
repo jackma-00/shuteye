@@ -141,6 +141,9 @@ cython_debug/
 # VS Code
 .vscode/
 
+# MacOS
+.DS_Store
+
 # Local development
 Makefile
 test_data/
