@@ -104,8 +104,8 @@ async def get_awaken_time(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         await update.message.reply_text(Messages.thats_it)
 
-        # FIXME: Stop the bot after final response
-        # context.application.stop_running()
+        # Stop the bot after final response
+        context.application.stop_running()
 
         return ConversationHandler.END
 
@@ -171,8 +171,8 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 )
             )
 
-        # FIXME: Stop the bot after final response
-        # context.application.stop_running()
+        # Stop the bot after final response
+        context.application.stop_running()
 
         return ConversationHandler.END
     except ValueError as e:
@@ -183,8 +183,8 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     except PlanUpdateError as e:
         print(f"PlanUpdateError: {e}")
         await update.message.reply_text(Messages.internal_error)
-        # FIXME: Stop the bot after final response
-        # context.application.stop_running()
+        # Stop the bot after final response
+        context.application.stop_running()
 
         return ConversationHandler.END
 
