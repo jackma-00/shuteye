@@ -33,8 +33,8 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           echo "Starting Telegram bot at $(date -u)"
-          # Run for max 3h (10800 seconds)
-          timeout 10800 src/scripts/run_bot.sh
+          # Run for max 4h (14400 seconds)
+          timeout 14400 src/scripts/run_bot.sh
           echo "Bot stopped at $(date -u)"
       
       - name: Commit & push updated sleep log
