@@ -76,26 +76,28 @@ def adjust_sleep_plan_se_tst_clipped(
         clipped_tst = df["tst"].clip(lower=lower_bound, upper=upper_bound)
 
         # Weighted average of clipped TST (recent nights weigh more)
-        weights = np.linspace(1, 2, len(clipped_tst))
-        weighted_tst = np.average(clipped_tst, weights=weights)
+        # weights = np.linspace(1, 2, len(clipped_tst))
+        # weighted_tst = np.average(clipped_tst, weights=weights)
+        # FIXME: Attempt simpler unweighted average for now
+        avg_tst = df["tst"].mean()
 
         # Adjust TIB based on SE and weighted TST
         if avg_se > 90:
             # Very good efficiency → allow slight extension, but never below weighted TST
-            tib = max(tib + DELTA_UP, weighted_tst)
+            tib = max(tib + DELTA_UP, avg_tst)
         elif 85 <= avg_se <= 90:
             # Good efficiency → maintain TIB, but bump up if consistently sleeping more
-            tib = max(tib, weighted_tst)
+            tib = max(tib, avg_tst)
         elif 70 <= avg_se < 85:
-            if weighted_tst > tib:
+            if avg_tst > tib:
                 # Sleeping more than prescribed TIB but efficiency is low → trim
                 tib -= DELTA_DOWN
             else:
                 # Sleeping less than prescribed TIB but still inefficient → trim cautiously
-                tib = min(tib - DELTA_DOWN, weighted_tst + BUFFER)
+                tib = min(tib - DELTA_DOWN, avg_tst + BUFFER)
         else:  # avg_se < 70
             # Poor efficiency → restrict TIB close to actual sleep, add buffer, enforce floor
-            tib = max(weighted_tst + BUFFER, MIN_TIB)
+            tib = max(avg_tst + BUFFER, MIN_TIB)
 
         tib = int(tib)
 
@@ -107,7 +109,7 @@ def adjust_sleep_plan_se_tst_clipped(
         new_plan.update_bedtime
 
         save_plan(new_plan, PLAN_PATH)
-        return new_plan, avg_se, weighted_tst
+        return new_plan, avg_se, avg_tst
     except Exception as e:
         raise PlanUpdateError(f"Failed to update sleep plan: {e}")
 
