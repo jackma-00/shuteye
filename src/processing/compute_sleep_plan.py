@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from src.common.config import PLAN_PATH, DELTA_UP, DELTA_DOWN, BUFFER, MIN_TIB
+from src.common.config import MIN_TIB_CONSERVATIVE, PLAN_PATH, DELTA_UP, DELTA_DOWN, BUFFER, MIN_TIB
 from src.common.models import SleepPlan
 from src.common.exceptions import PlanUpdateError
 from src.data_manager.plan_utils import save_plan
@@ -62,7 +62,7 @@ def adjust_sleep_plan_se_tst_clipped(
     df: pd.DataFrame, current_plan: SleepPlan
 ) -> tuple[SleepPlan, float, float]:
     """
-    Adjust plan based on last 5 days' average SE and clipped weighted TST.
+    Adjust plan based on last 5 days' average SE and clipped TST.
     Clips TST values to a window relative to current TIB before averaging.
     """
     try:
@@ -98,6 +98,55 @@ def adjust_sleep_plan_se_tst_clipped(
         else:  # avg_se < 70
             # Poor efficiency → restrict TIB close to actual sleep, add buffer, enforce floor
             tib = max(avg_tst + BUFFER, MIN_TIB)
+
+        tib = int(tib)
+
+        # Create new plan
+        new_plan = SleepPlan(
+            tib=tib,
+            wake_time=current_plan.wake_time,
+        )
+        new_plan.update_bedtime
+
+        save_plan(new_plan, PLAN_PATH)
+        return new_plan, avg_se, avg_tst
+    except Exception as e:
+        raise PlanUpdateError(f"Failed to update sleep plan: {e}")
+
+
+def adjust_sleep_plan_se_tst_conservative(
+    df: pd.DataFrame, current_plan: SleepPlan
+) -> tuple[SleepPlan, float, float]:
+    """
+    Adjust plan based on last 5 days' average SE and clipped TST.
+    Minimum TIB enforced to 7 hours.
+    """
+    try:
+        avg_se = df["se"].mean()
+
+        tib = current_plan.tib
+        lower_bound = 0.7 * tib
+        upper_bound = 1.2 * tib
+
+        # Clip TST values relative to TIB
+        clipped_tst = df["tst"].clip(lower=lower_bound, upper=upper_bound)
+
+        # Average of clipped TST
+        avg_tst = np.average(clipped_tst)
+
+        # Adjust TIB based on SE and weighted TST
+        if avg_se > 90:
+            # Very good efficiency → allow slight extension, but never below weighted TST
+            tib = max(tib + DELTA_UP, avg_tst)
+        elif 85 <= avg_se <= 90:
+            # Good efficiency → maintain TIB, but bump up if consistently sleeping more
+            tib = max(tib, avg_tst)
+        elif 70 <= avg_se < 85:
+            # Partial efficiency → trim TIB cautiously, enforce conservative floor
+            tib = max(tib - DELTA_DOWN, MIN_TIB_CONSERVATIVE)
+        else:  # avg_se < 70
+            # Poor efficiency → restrict TIB close to actual sleep, add buffer, enforce floor
+            tib = max(avg_tst + BUFFER, MIN_TIB_CONSERVATIVE)
 
         tib = int(tib)
 

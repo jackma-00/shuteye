@@ -30,6 +30,7 @@ from src.data_manager.plan_utils import update_wake_time, load_plan
 
 from src.processing.compute_sleep_plan import (
     adjust_sleep_plan_se_tst_clipped,
+    adjust_sleep_plan_se_tst_conservative,
     initialize_sleep_plan,
 )
 
@@ -151,12 +152,12 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 )
             )
         else:
-            new_plan, avg_se, weighted_tst = adjust_sleep_plan_se_tst_clipped(
+            new_plan, avg_se, avg_tst = adjust_sleep_plan_se_tst_conservative(
                 df.tail(UPDATE_WINDOW), curr_plan
             )
 
             hours, minutes = divmod(new_plan.tib, 60)
-            hours_tst, minutes_tst = divmod(weighted_tst, 60)
+            hours_tst, minutes_tst = divmod(avg_tst, 60)
 
             await update.message.reply_text(
                 Messages.new_sleep_plan.format(
