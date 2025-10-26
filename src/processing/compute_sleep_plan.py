@@ -79,7 +79,7 @@ def adjust_sleep_plan_se_tst_clipped(
         # weights = np.linspace(1, 2, len(clipped_tst))
         # weighted_tst = np.average(clipped_tst, weights=weights)
         # FIXME: Attempt simpler unweighted average for now
-        avg_tst = df["tst"].mean()
+        avg_tst = np.average(clipped_tst)
 
         # Adjust TIB based on SE and weighted TST
         if avg_se > 90:
