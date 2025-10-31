@@ -156,7 +156,7 @@ def adjust_sleep_plan_se_tst_conservative(
             tib=tib,
             bedtime=current_plan.bedtime,
         )
-        new_plan.update_bedtime
+        new_plan.update_wake_time
 
         save_plan(new_plan, PLAN_PATH)
         return new_plan, avg_se, avg_tst
