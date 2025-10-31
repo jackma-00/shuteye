@@ -8,7 +8,7 @@ from datetime import datetime
 from src.common.config import (
     BEDTIME,
     EARLIEST_WAKE,
-    LATEST_BEDTIME,
+    EARLIEST_BEDTIME,
     LOG_PATH,
     PLAN_PATH,
     WAKEUP,
@@ -102,7 +102,7 @@ async def get_awaken_time(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             # NOTE: ask for bedtime as anchor for new plan
             await update.message.reply_text(Messages.ready_for_next_plan_bedtime)
 
-            return LATEST_BEDTIME
+            return EARLIEST_BEDTIME
 
         await update.message.reply_text(Messages.thats_it)
 
@@ -191,14 +191,14 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return ConversationHandler.END
 
 
-async def ask_latest_bedtime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def ask_earliest_bedtime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
-        latest_bedtime = datetime.strptime(update.message.text.strip(), "%H:%M").time()
-        update_bedtime(latest_bedtime)
+        earliest_bedtime = datetime.strptime(update.message.text.strip(), "%H:%M").time()
+        update_bedtime(earliest_bedtime)
 
         await update.message.reply_text(
-            Messages.new_plan_being_generated.format(
-                wake_time=latest_bedtime.strftime("%H:%M")
+            Messages.new_plan_being_generated_bedtime.format(
+                bedtime=earliest_bedtime.strftime("%H:%M")
             )
         )
 
@@ -233,7 +233,7 @@ async def ask_latest_bedtime(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(
             f"⚠️ Error parsing time. Please enter your earliest desired wake-up time (HH:MM): {e}"
         )
-        return EARLIEST_WAKE
+        return EARLIEST_BEDTIME
     except PlanUpdateError as e:
         print(f"PlanUpdateError: {e}")
         await update.message.reply_text(Messages.internal_error)
