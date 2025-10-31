@@ -26,6 +26,10 @@ Wishing you a calm and cozy day ahead. ✨"""
     new_plan_being_generated = """Great! Your earliest desired wake-up time is set to {wake_time}.
 Your personalized sleep plan is on its way. 🛌💤"""
 
+    # NOTE: This message version is specifically for when the user wants to use the bedtime as an anchor.
+    new_plan_being_generated_bedtime = """Great! Your earliest desired bedtime is set to {bedtime}.
+Your personalized sleep plan is on its way. 🛌💤"""
+
     first_sleep_plan = """🆕 Your first sleep plan is ready! Here are your details:
 - Target Time in Bed (TIB): {hours} hours {minutes} minutes
 - Bedtime: {bedtime}
