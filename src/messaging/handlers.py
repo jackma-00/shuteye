@@ -242,6 +242,7 @@ async def ask_latest_bedtime(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         return ConversationHandler.END
 
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(Messages.bye)
     return ConversationHandler.END

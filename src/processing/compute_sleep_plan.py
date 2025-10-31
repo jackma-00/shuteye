@@ -1,7 +1,14 @@
 import pandas as pd
 import numpy as np
 
-from src.common.config import MIN_TIB_CONSERVATIVE, PLAN_PATH, DELTA_UP, DELTA_DOWN, BUFFER, MIN_TIB
+from src.common.config import (
+    MIN_TIB_CONSERVATIVE,
+    PLAN_PATH,
+    DELTA_UP,
+    DELTA_DOWN,
+    BUFFER,
+    MIN_TIB,
+)
 from src.common.models import SleepPlan
 from src.common.exceptions import PlanUpdateError
 from src.data_manager.plan_utils import save_plan

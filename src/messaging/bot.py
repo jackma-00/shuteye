@@ -6,7 +6,15 @@ from telegram.ext import (
     CommandHandler,
 )
 
-from src.common.config import BOT_TOKEN, BEDTIME, LATEST_BEDTIME, WAKEUP, ONSET, AWAKE, EARLIEST_WAKE
+from src.common.config import (
+    BOT_TOKEN,
+    BEDTIME,
+    LATEST_BEDTIME,
+    WAKEUP,
+    ONSET,
+    AWAKE,
+    EARLIEST_WAKE,
+)
 
 from src.messaging.handlers import (
     ask_earliest_wake,
