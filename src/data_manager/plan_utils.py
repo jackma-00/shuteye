@@ -33,3 +33,9 @@ def update_wake_time(new_wake_time: time, path: str = PLAN_PATH):
     plan = load_plan(path)
     plan.wake_time = new_wake_time
     save_plan(plan, path)
+
+
+def update_bedtime(new_bedtime: time, path: str = PLAN_PATH):
+    plan = load_plan(path)
+    plan.bedtime = new_bedtime
+    save_plan(plan, path)

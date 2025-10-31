@@ -8,6 +8,7 @@ from datetime import datetime
 from src.common.config import (
     BEDTIME,
     EARLIEST_WAKE,
+    LATEST_BEDTIME,
     LOG_PATH,
     PLAN_PATH,
     WAKEUP,
@@ -26,10 +27,9 @@ from src.data_manager.log_utils import (
     read_log_csv,
     ready_for_new_plan,
 )
-from src.data_manager.plan_utils import update_wake_time, load_plan
+from src.data_manager.plan_utils import update_bedtime, update_wake_time, load_plan
 
 from src.processing.compute_sleep_plan import (
-    adjust_sleep_plan_se_tst_clipped,
     adjust_sleep_plan_se_tst_conservative,
     initialize_sleep_plan,
 )
@@ -99,9 +99,10 @@ async def get_awaken_time(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return EARLIEST_WAKE
 
         if ready_for_new_plan():
-            await update.message.reply_text(Messages.ready_for_next_plan)
+            # NOTE: ask for bedtime as anchor for new plan
+            await update.message.reply_text(Messages.ready_for_next_plan_bedtime)
 
-            return EARLIEST_WAKE
+            return LATEST_BEDTIME
 
         await update.message.reply_text(Messages.thats_it)
 
@@ -189,6 +190,57 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         return ConversationHandler.END
 
+
+async def ask_latest_bedtime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    try:
+        latest_bedtime = datetime.strptime(update.message.text.strip(), "%H:%M").time()
+        update_bedtime(latest_bedtime)
+
+        await update.message.reply_text(
+            Messages.new_plan_being_generated.format(
+                wake_time=latest_bedtime.strftime("%H:%M")
+            )
+        )
+
+        # Compute new plan
+        df = read_log_csv(LOG_PATH)
+        curr_plan = load_plan(PLAN_PATH)
+        new_plan, avg_se, avg_tst = adjust_sleep_plan_se_tst_conservative(
+            df.tail(UPDATE_WINDOW), curr_plan
+        )
+
+        hours, minutes = divmod(new_plan.tib, 60)
+        hours_tst, minutes_tst = divmod(avg_tst, 60)
+
+        await update.message.reply_text(
+            Messages.new_sleep_plan.format(
+                hours=hours,
+                minutes=minutes,
+                bedtime=new_plan.bedtime.strftime("%H:%M"),
+                wake_time=new_plan.wake_time.strftime("%H:%M"),
+                UPDATE_WINDOW=UPDATE_WINDOW,
+                hours_tst=int(hours_tst),
+                minutes_tst=int(minutes_tst),
+                avg_se=avg_se,
+            )
+        )
+
+        # Stop the bot after final response
+        context.application.stop_running()
+
+        return ConversationHandler.END
+    except ValueError as e:
+        await update.message.reply_text(
+            f"⚠️ Error parsing time. Please enter your earliest desired wake-up time (HH:MM): {e}"
+        )
+        return EARLIEST_WAKE
+    except PlanUpdateError as e:
+        print(f"PlanUpdateError: {e}")
+        await update.message.reply_text(Messages.internal_error)
+        # Stop the bot after final response
+        context.application.stop_running()
+
+        return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(Messages.bye)

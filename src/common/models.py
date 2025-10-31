@@ -41,6 +41,14 @@ class SleepPlan:
         wt = datetime.combine(datetime.today(), self.wake_time)
         bt = wt - timedelta(minutes=self.tib)
         self.bedtime = bt.time()
+    
+    @property
+    def update_wake_time(self) -> None:
+        if self.tib is None or self.bedtime is None:
+            raise ValueError("tib and bedtime must be set to update wake_time")
+        bt = datetime.combine(datetime.today(), self.bedtime)
+        wt = bt + timedelta(minutes=self.tib)
+        self.wake_time = wt.time()
 
 
 @dataclass

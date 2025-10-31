@@ -119,6 +119,7 @@ def adjust_sleep_plan_se_tst_conservative(
 ) -> tuple[SleepPlan, float, float]:
     """
     Adjust plan based on last 5 days' average SE and clipped TST.
+    Preference to use bedtime as anchor for adjustments.
     Minimum TIB enforced to 7 hours.
     """
     try:
@@ -153,7 +154,7 @@ def adjust_sleep_plan_se_tst_conservative(
         # Create new plan
         new_plan = SleepPlan(
             tib=tib,
-            wake_time=current_plan.wake_time,
+            bedtime=current_plan.bedtime,
         )
         new_plan.update_bedtime
 

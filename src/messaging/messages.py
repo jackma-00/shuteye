@@ -16,6 +16,10 @@ What’s the earliest time you'd like to wake up? (HH:MM)"""
     ready_for_next_plan = """🔄 Awesome! You've collected enough new data for an updated sleep plan.
 Would you like to keep the same wake-up time or set a new one? (HH:MM)"""
 
+    # NOTE: This message version is specifically for when the user wants to use the bedtime as an anchor.
+    ready_for_next_plan_bedtime = """🔄 Awesome! You've collected enough new data for an updated sleep plan.
+Would you like to keep the same bedtime or set a new one? (HH:MM)"""
+
     thats_it = """That’s all for today! 👋 You can log again tomorrow with /log.
 Wishing you a calm and cozy day ahead. ✨"""
 
