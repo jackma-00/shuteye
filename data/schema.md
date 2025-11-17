@@ -1,5 +1,7 @@
 ## Data schema
 
+date, bedtime, wakeup, onset, awake, TIB, TST, SE
+
 * **Date** (date): date. 
 * **Bedtime** (bedtime): when you got into bed
 * **Wake-up time** (wakeup): when you got out of bed.
