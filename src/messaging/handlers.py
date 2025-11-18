@@ -30,6 +30,7 @@ from src.data_manager.log_utils import (
 from src.data_manager.plan_utils import update_bedtime, update_wake_time, load_plan
 
 from src.processing.compute_sleep_plan import (
+    adjust_sleep_plan_se_tst_clipped,
     adjust_sleep_plan_se_tst_conservative,
     initialize_sleep_plan,
 )
@@ -99,10 +100,9 @@ async def get_awaken_time(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return EARLIEST_WAKE
 
         if ready_for_new_plan():
-            # NOTE: ask for bedtime as anchor for new plan
             await update.message.reply_text(Messages.ready_for_next_plan_bedtime)
 
-            return EARLIEST_BEDTIME
+            return EARLIEST_WAKE
 
         await update.message.reply_text(Messages.thats_it)
 
@@ -153,7 +153,7 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 )
             )
         else:
-            new_plan, avg_se, avg_tst = adjust_sleep_plan_se_tst_conservative(
+            new_plan, avg_se, avg_tst = adjust_sleep_plan_se_tst_clipped(
                 df.tail(UPDATE_WINDOW), curr_plan
             )
 
@@ -191,9 +191,13 @@ async def ask_earliest_wake(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return ConversationHandler.END
 
 
-async def ask_earliest_bedtime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def ask_earliest_bedtime(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
     try:
-        earliest_bedtime = datetime.strptime(update.message.text.strip(), "%H:%M").time()
+        earliest_bedtime = datetime.strptime(
+            update.message.text.strip(), "%H:%M"
+        ).time()
         update_bedtime(earliest_bedtime)
 
         await update.message.reply_text(

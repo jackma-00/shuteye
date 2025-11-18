@@ -15,8 +15,8 @@ BEDTIME, WAKEUP, ONSET, AWAKE, EARLIEST_WAKE, EARLIEST_BEDTIME = range(6)
 # Sleep Plan
 INIT_WINDOW = 7
 UPDATE_WINDOW = 5
-DELTA_UP = 15
-DELTA_DOWN = 15
+DELTA_UP = 5   # NOTE: Minor tweak. Originally 15 min.
+DELTA_DOWN = 5 # NOTE: Minor tweak. Originally 15 min.
 BUFFER = 30
 MIN_TIB = 330  # 5.5h floor
-MIN_TIB_CONSERVATIVE = 480  # 8h floor
+MIN_TIB_CONSERVATIVE = 420  # 7h floor
