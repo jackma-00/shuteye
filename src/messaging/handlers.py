@@ -100,7 +100,7 @@ async def get_awaken_time(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return EARLIEST_WAKE
 
         if ready_for_new_plan():
-            await update.message.reply_text(Messages.ready_for_next_plan_bedtime)
+            await update.message.reply_text(Messages.ready_for_next_plan)
 
             return EARLIEST_WAKE
 
